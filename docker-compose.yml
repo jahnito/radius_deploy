@@ -1,0 +1,27 @@
+services:
+  mariadb:
+    image: mariadb:11.7.2-ubi9
+    restart: always
+    volumes:
+      - ./mariadb:/var/lib/mysql        # каталог с данными
+    ports:
+      - "3306:3306"
+    environment:
+      MARIADB_ROOT_PASSWORD: example
+
+  adminer:
+    image: adminer:5.0.6-standalone
+    restart: always
+    ports:
+      - 8080:8080
+  
+  radius:
+    image: freeradius/freeradius-server:3.2.7
+    restart: always
+    volumes:
+      - ./configs/sql:/etc/freeradius/mods-enabled/sql
+      - ./configs/clients.conf:/etc/raddb/clients.conf
+    ports:
+     - 1812:1812/udp
+     - 1813:1813/udp
+    command: -X
