@@ -14,7 +14,6 @@ TMPDIR='default'
 RESULT='result.sql'
 IMAGES=(mariadb:11.7.2-ubi9 freeradius/freeradius-server:3.2.7-alpine adminer:5.0.6-standalone)
 FILES=(schema.sql setup.sql process-radacct.sql queries.conf)
-CT='CREATE DATABASE IF NOT EXISTS `radius` DEFAULT CHARACTER SET utf8mb4;\nUSE `radius`;\n'
 
 #
 # Загрузка образов
@@ -48,14 +47,14 @@ echo -e '\n\nСборка схемы БД...\n'
 
 if [ -d $TMPDIR ]
 then
-    echo "Временный каталог $TMPDIR существует"
+    echo -e "Временный каталог $TMPDIR существует\n"
     exit 1
 else
-    echo "Создаю временный каталог $TMPDIR"
+    echo -e "Создаю временный каталог $TMPDIR\n"
     mkdir $TMPDIR
 fi
 
-docker run --rm --name freeradius -v `pwd`/$TMPDIR:/root -d freeradius/freeradius-server:3.2.7-alpine
+docker run --rm --name freeradius -v `pwd`/$TMPDIR:/root -d freeradius/freeradius-server:3.2.7-alpine > /dev/null
 
 for i in ${FILES[*]}
 do
@@ -63,7 +62,7 @@ do
     docker exec -d -u root freeradius chmod 666 /root/$i
 done
 
-docker stop freeradius
+docker stop freeradius > /dev/null
 
 # Редактируем setup.sql
 sed -i.original '/\(^$\|^#\|^.\+#\)/d' $TMPDIR/setup.sql
@@ -74,10 +73,14 @@ sed -i "s/radpass/$DBPASS/" $TMPDIR/setup.sql
 sed -i.original '/\(^$\|^#\|^.\+#\)/d' default/schema.sql
 
 # Формируем конечный SQL
-echo -e $CT > $TMPDIR/$RESULT
+# echo -e $CRTDB > $TMPDIR/$RESULT
+cat setup/1.createdb.sql >> $TMPDIR/$RESULT
+echo -e '\n' >> $TMPDIR/$RESULT
 cat $TMPDIR/schema.sql >> $TMPDIR/$RESULT
 echo -e '\n' >> $TMPDIR/$RESULT
 cat $TMPDIR/setup.sql >> $TMPDIR/$RESULT
+# echo $REPLUSER >> $TMPDIR/$RESULT
+cat setup/2.createrepl.sql >> $TMPDIR/$RESULT
 
 #
 # Создаем структуру базы данных и каталог хранения
@@ -85,16 +88,17 @@ cat $TMPDIR/setup.sql >> $TMPDIR/$RESULT
 
 if [ -d $DBDIR ]
 then
-    echo "Каталог уже существует, необходимо удалить его перед инициализацией"
+    echo -e "Каталог уже существует, необходимо удалить его перед инициализацией\n"
     exit 1
 else
-    echo "Создаю каталог для хранения данных"
+    echo -e "Создаю каталог для хранения данных\n"
     mkdir $DBDIR
     chmod 777 $DBDIR
 fi
 
-echo -e "\n\nСоздание временных контейнеров, создание таблиц и пользовтелей..."
+echo -e "\n\nСоздание временных контейнеров, создание таблиц и пользовтелей...\n"
 
+# Для отладки
 docker network create deploy
 
 # в каталог монтируем подготовленный sql файл /docker-entrypoint-initdb.d
@@ -102,18 +106,21 @@ docker network create deploy
 
 docker run --rm --name mariadb \
         -v `pwd`/$DBDIR:/var/lib/mysql \
-        -v `pwd`/$TMPDIR/$RESULT:/docker-entrypoint-initdb.d/$RESULT \
-        -d -e MARIADB_ROOT_PASSWORD=$DBROOTPASS \
-        --network deploy \
-        mariadb:11.7.2-ubi9
+        -v `pwd`/$TMPDIR/$RESULT:/docker-entrypoint-initdb.d/$RESULT:z \
+        -v `pwd`/configs/primary-1.cnf:/etc/mysql/conf.d/primary-1.cnf:z \
+        -e MARIADB_ROOT_PASSWORD=$DBROOTPASS \
+        -d --network deploy \
+        mariadb:11.7.2-ubi9 > /dev/null
 
-docker stop mariadb
-
-docker network rm test
 
 # Для отладки можно запустить adminer
-# docker run --rm --name adminer \
-#            --network deploy \
-#            -p 8080:8080 -d adminer:5.0.6-standalone
+docker run --rm --name adminer \
+           --network deploy \
+           -p 8080:8080 -d adminer:5.0.6-standalone
 
+# docker stop mariadb > /dev/null
 
+# docker stop adminer > /dev/null
+
+# Для отладки
+# docker network rm deploy
