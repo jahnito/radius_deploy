@@ -1,0 +1,2 @@
+[mariadb]
+server_id=1001                  # used to uniquely identify the server

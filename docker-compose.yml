@@ -21,6 +21,7 @@ services:
     volumes:
       - ./configs/sql:/etc/freeradius/mods-enabled/sql
       - ./configs/clients.conf:/etc/raddb/clients.conf
+      - ./configs/dictionary:/etc/raddb/dictionary
     ports:
      - 1812:1812/udp
      - 1813:1813/udp

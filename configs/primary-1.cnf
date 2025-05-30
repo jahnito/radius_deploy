@@ -1,3 +1,3 @@
 [mariadb]
-log-bin = mysql-bin               # enable binary logging
-server_id = 1                     # used to uniquely identify the server
+log-bin                           # enable binary logging
+server_id=100                     # used to uniquely identify the server
