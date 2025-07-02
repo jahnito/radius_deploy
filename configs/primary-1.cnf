@@ -1,3 +1,4 @@
 [mariadb]
 log-bin                           # enable binary logging
 server_id=100                     # used to uniquely identify the server
+log-basename=radius               # used to be independent of hostname changes (otherwise name is <datadir>/mysql-bin)

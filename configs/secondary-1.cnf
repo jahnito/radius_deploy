@@ -1,2 +1,5 @@
 [mariadb]
+log-bin
 server_id=1001                  # used to uniquely identify the server
+log-basename=
+read_only=1                     # read only mode
