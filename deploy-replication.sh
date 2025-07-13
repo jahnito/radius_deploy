@@ -7,7 +7,7 @@
 # Порядок указания образов строгий, 0 - MySQL/MariaDB, 1 - FreeRADIUS, 2 - Adminer
 
 # Адрес сервера основной БД
-MASTER_HOST='192.168.12.200'
+MASTER_HOST='192.168.3.206'
 # Порт сервера основной БД
 MASTER_PORT='3306'
 # Пароль пользователя root БД
@@ -127,10 +127,10 @@ fi
 # Вывод статуса слэйв ноды
 #
 
-docker exec -ti mariadb mariadb -uroot -p$DBROOTPASS -e "show slave status\G"
+docker exec -ti mariadb-secondary mariadb -uroot -p$DBROOTPASS -e "show slave status\G"
 
 
-docker stop mariadb > /dev/null
+docker stop mariadb-secondary > /dev/null
 
 docker stop adminer > /dev/null
 
