@@ -165,10 +165,10 @@ fi
 # docker exec -ti mariadb mariadb -uroot -pexample -e "show databases like 'primary%'"
 
 # Вывод статуса мастер ноды
-docker exec -ti mariadb mariadb -uroot -pexample -e "show master status"
+docker exec -ti mariadb mariadb -uroot -p$DBROOTPASS -e "show master status"
 
 # Вывод логов мастер ноды
-docker exec -ti mariadb mariadb -uroot -pexample -e "show binary logs\G;"
+docker exec -ti mariadb mariadb -uroot -p$DBROOTPASS -e "show binary logs\G;"
 
 
 docker stop mariadb > /dev/null

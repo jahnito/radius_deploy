@@ -3,7 +3,8 @@ services:
     image: mariadb:11.7.2-ubi9
     restart: always
     volumes:
-      - ./mariadb:/var/lib/mysql        # каталог с данными
+      - ./configs/secondary-1.cnf:/etc/mysql/conf.d/secondary-1.cnf:z
+      - ./mariadb_replication:/var/lib/mysql        # каталог с данными
     ports:
       - "3306:3306"
     environment:

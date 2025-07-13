@@ -22,6 +22,8 @@ TMPDIR='default'
 RESULT='result.sql'
 # Перечень образов задействованых в работе сервиса, порядок контейнеров не нарушать
 IMAGES=(mariadb:11.7.2-ubi9 freeradius/freeradius-server:3.2.7 adminer:5.0.6-standalone)
+# Конфигурационные файлы извлекаемые из базового образа freeradius
+FILES=(/etc/raddb/dictionary)
 # Режим отладки 0 - отключен, 1 - включен, дает более детальный вывод и в процессе выполнения дает возможность
 # зайти в проинициализированную БД через adminer
 DEBUG=1
@@ -75,6 +77,28 @@ else
     chmod 777 $DBDIR
 fi
 
+#
+# Запускаем FreeRADIUS для выгрузки базовых конфигов
+#
+
+docker run --rm --name freeradius -v `pwd`/$TMPDIR:/root -d ${IMAGES[1]} > /dev/null
+
+for i in ${FILES[*]}
+do
+    docker exec -d -u root freeradius cp $i /root/${i##*/}
+done
+
+# Подготовка словаря вендоров
+
+cat $TMPDIR/dictionary > configs/dictionary
+cat setup/4.vendor_dicts.txt >> configs/dictionary
+
+docker stop freeradius > /dev/null
+
+#
+# Запускаем БД
+#
+
 docker run --rm --name mariadb-secondary \
         -v `pwd`/$DBDIR:/var/lib/mysql \
         -v `pwd`/configs/secondary-1.cnf:/etc/mysql/conf.d/secondary-1.cnf:z \
@@ -85,7 +109,9 @@ docker run --rm --name mariadb-secondary \
         -d --network deploy \
         ${IMAGES[0]}
 
-read
+#
+# Запускаем Adminer
+#
 
 if [ $DEBUG -eq 1 ]; then
     # Для отладки можно запустить adminer
@@ -97,3 +123,15 @@ if [ $DEBUG -eq 1 ]; then
     read
 fi
 
+#
+# Вывод статуса слэйв ноды
+#
+
+docker exec -ti mariadb mariadb -uroot -p$DBROOTPASS -e "show slave status\G"
+
+
+docker stop mariadb > /dev/null
+
+docker stop adminer > /dev/null
+
+docker network rm deploy > /dev/null
