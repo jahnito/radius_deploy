@@ -3,4 +3,4 @@ log-bin
 server_id=1001                  # used to uniquely identify the server
 log-basename=radius
 replicate_do_db=radius
-read_only=1                     # read only mode
+read_only=0                     # read only mode
